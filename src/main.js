@@ -766,6 +766,8 @@ function renderDashboardContent(profile, courses, path = '/dashboard') {
             <input id="course-search" type="search" placeholder="ค้นหารหัสหรือชื่อวิชา" aria-label="ค้นหารหัสหรือชื่อวิชา">
           </label>
           <button class="clear-course-filters" id="clear-course-filters" type="button">ล้างตัวกรอง</button>
+          <button class="select-courses-button" id="toggle-course-selection" type="button" aria-pressed="false" ${courses.length ? '' : 'disabled'}>เลือกวิชา</button>
+          <button class="delete-selected-courses-button" id="delete-selected-courses" type="button" disabled hidden>ลบที่เลือก (0)</button>
           <a class="add-course-button" href="/courses/new" data-dashboard-route="/courses/new">
             <span aria-hidden="true">＋</span> เพิ่มรายวิชา
           </a>
@@ -800,7 +802,7 @@ function renderDashboardContent(profile, courses, path = '/dashboard') {
       ${courses.length
         ? `<div class="course-table-wrap">
             <table class="course-table">
-              <thead><tr><th>เรียนแล้ว</th><th>รหัสวิชา</th><th>ชื่อวิชา</th><th>หมวดวิชา</th><th>หน่วยกิต</th><th>เกรด</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+              <thead><tr><th class="course-selection-cell"><input id="select-all-courses" class="select-all-courses-checkbox" type="checkbox" aria-label="เลือกวิชาที่แสดงทั้งหมด"></th><th>เรียนแล้ว</th><th>รหัสวิชา</th><th>ชื่อวิชา</th><th>หมวดวิชา</th><th>หน่วยกิต</th><th>เกรด</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
               <tbody id="course-rows">${courses.map(renderCourseRow).join('')}</tbody>
             </table>
           </div>
@@ -911,6 +913,7 @@ function renderDashboardContent(profile, courses, path = '/dashboard') {
     });
     const noResults = app.querySelector('#no-search-results');
     if (noResults) noResults.hidden = visibleCount > 0;
+    updateSelectedCount();
   };
   ['#course-search', '#year-filter', '#semester-filter', '#category-filter']
     .forEach((selector) => {
@@ -933,6 +936,92 @@ function renderDashboardContent(profile, courses, path = '/dashboard') {
     app.querySelector('#semester-filter').value = '';
     app.querySelector('#category-filter').value = '';
     app.querySelector('.status-filter[data-status-filter="all"]')?.click();
+  });
+  const courseTable = app.querySelector('.course-table');
+  const selectionToggle = app.querySelector('#toggle-course-selection');
+  const deleteSelectedButton = app.querySelector('#delete-selected-courses');
+  const updateSelectedCount = () => {
+    if (!deleteSelectedButton) return;
+    const selectedCount = app.querySelectorAll('.course-selection-checkbox:checked').length;
+    deleteSelectedButton.textContent = `ลบที่เลือก (${selectedCount})`;
+    deleteSelectedButton.disabled = selectedCount === 0;
+    const visibleCheckboxes = [...app.querySelectorAll(
+      '.course-row:not([hidden]) .course-selection-checkbox'
+    )];
+    const selectedVisibleCount = visibleCheckboxes
+      .filter((checkbox) => checkbox.checked).length;
+    const selectAllCheckbox = app.querySelector('#select-all-courses');
+    if (!selectAllCheckbox) return;
+    selectAllCheckbox.checked = visibleCheckboxes.length > 0
+      && selectedVisibleCount === visibleCheckboxes.length;
+    selectAllCheckbox.indeterminate = selectedVisibleCount > 0
+      && selectedVisibleCount < visibleCheckboxes.length;
+  };
+  selectionToggle?.addEventListener('click', () => {
+    const isSelecting = selectionToggle.getAttribute('aria-pressed') !== 'true';
+    courseTable?.classList.toggle('selection-mode', isSelecting);
+    selectionToggle.setAttribute('aria-pressed', String(isSelecting));
+    selectionToggle.textContent = isSelecting ? 'ยกเลิกเลือก' : 'เลือกวิชา';
+    if (deleteSelectedButton) deleteSelectedButton.hidden = !isSelecting;
+    if (!isSelecting) {
+      app.querySelectorAll('.course-selection-checkbox').forEach((checkbox) => {
+        checkbox.checked = false;
+      });
+    }
+    updateSelectedCount();
+  });
+  app.querySelectorAll('.course-selection-checkbox').forEach((checkbox) => {
+    checkbox.addEventListener('change', updateSelectedCount);
+  });
+  app.querySelector('#select-all-courses')?.addEventListener('change', (event) => {
+    const isChecked = event.currentTarget.checked;
+    app.querySelectorAll('.course-row:not([hidden]) .course-selection-checkbox')
+      .forEach((checkbox) => {
+        checkbox.checked = isChecked;
+      });
+    updateSelectedCount();
+  });
+  deleteSelectedButton?.addEventListener('click', async () => {
+    const selectedCourses = [...app.querySelectorAll('.course-selection-checkbox:checked')]
+      .map((checkbox) => ({
+        id: checkbox.dataset.courseId,
+        name: checkbox.dataset.courseName
+      }));
+    if (!selectedCourses.length) return;
+
+    const shouldDelete = window.confirm(
+      `ยืนยันลบ ${selectedCourses.length} วิชาที่เลือกหรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้`
+    );
+    if (!shouldDelete) return;
+
+    deleteSelectedButton.disabled = true;
+    if (selectionToggle) selectionToggle.disabled = true;
+    const selectAllCheckbox = app.querySelector('#select-all-courses');
+    if (selectAllCheckbox) selectAllCheckbox.disabled = true;
+    app.querySelectorAll('.course-selection-checkbox').forEach((checkbox) => {
+      checkbox.disabled = true;
+    });
+
+    let deletedCount = 0;
+    for (const course of selectedCourses) {
+      try {
+        await deleteCourse(user.id, course.id);
+        deletedCount += 1;
+      } catch (error) {
+        pendingDashboardMessage = {
+          text: `ลบสำเร็จ ${deletedCount}/${selectedCourses.length} วิชา แต่ลบ "${course.name}" ไม่สำเร็จ: ${error.message || 'กรุณาลองอีกครั้ง'}`,
+          type: 'error'
+        };
+        await renderDashboard();
+        return;
+      }
+    }
+
+    pendingDashboardMessage = {
+      text: `ลบ ${deletedCount} วิชาที่เลือกแล้ว`,
+      type: 'success'
+    };
+    await renderDashboard();
   });
   initMotion(app.querySelector('.dashboard-page'), { countStats: true });
 
@@ -1501,6 +1590,15 @@ function renderCourseRow(course) {
 
   return `
     <tr class="course-row" data-search="${escapeHtml(searchValue)}" data-credits="${Number(course.credits) || 0}" data-year="${escapeHtml(course.year ?? '')}" data-semester="${escapeHtml(course.semester ?? '')}" data-category="${escapeHtml(course.category || '')}" data-status="${escapeHtml(status)}">
+      <td class="course-selection-cell">
+        <input
+          class="course-selection-checkbox"
+          type="checkbox"
+          data-course-id="${escapeHtml(course.id)}"
+          data-course-name="${escapeHtml(course.name || course.code || 'รายวิชานี้')}"
+          aria-label="เลือกวิชา ${escapeHtml(course.name || course.code || '')} เพื่อลบ"
+        >
+      </td>
       <td>
         <label class="course-complete-toggle">
           <input

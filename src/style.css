@@ -5241,3 +5241,86 @@ body {
   }
 
 }
+
+.course-actions .select-courses-button,
+.course-actions .delete-selected-courses-button {
+  display: inline-flex;
+  min-height: 36px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--text);
+  background: var(--surface);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+
+.course-actions .select-courses-button[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.course-actions .delete-selected-courses-button {
+  border-color: #efc3c6;
+  color: #b42332;
+  background: #fff5f5;
+}
+
+.course-actions .delete-selected-courses-button:hover:not(:disabled) {
+  border-color: #d13c4a;
+  background: #ffe9eb;
+}
+
+.course-actions .select-courses-button:disabled,
+.course-actions .delete-selected-courses-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.course-actions .delete-selected-courses-button[hidden] {
+  display: none;
+}
+
+.course-selection-cell,
+.course-table.selection-mode .course-selection-cell {
+  display: none;
+}
+
+.course-table.selection-mode .course-selection-cell {
+  display: table-cell;
+}
+
+.course-selection-checkbox,
+.select-all-courses-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.course-selection-checkbox:disabled,
+.select-all-courses-checkbox:disabled {
+  cursor: wait;
+}
+
+.select-courses-button:focus-visible,
+.delete-selected-courses-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+:root[data-theme="dark"] .course-actions .delete-selected-courses-button {
+  border-color: #563137;
+  color: #ff9aa4;
+  background: #321d21;
+}
+
+:root[data-theme="dark"] .course-actions .delete-selected-courses-button:hover:not(:disabled) {
+  border-color: #a84753;
+  background: #482329;
+}
