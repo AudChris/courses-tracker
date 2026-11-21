@@ -1,4 +1,11 @@
-import { supabase } from '../lib/supabase.js';
+import { supabase, supabaseConfigError } from '../lib/supabase.js';
+
+function requireSupabase() {
+  if (!supabase) {
+    throw new Error(supabaseConfigError);
+  }
+  return supabase;
+}
 
 export async function signUp({
   email,
@@ -8,8 +15,9 @@ export async function signUp({
   faculty,
   major
 }) {
+  const client = requireSupabase();
   const { data, error } =
-    await supabase.auth.signUp({
+    await client.auth.signUp({
       email,
       password,
       options: {
@@ -36,6 +44,7 @@ export async function updateStudentDetails({
   major,
   avatarUrl
 }) {
+  const client = requireSupabase();
   const userMetadata = {
     first_name: firstName,
     last_name: lastName,
@@ -47,7 +56,7 @@ export async function updateStudentDetails({
     userMetadata.avatar_url = avatarUrl;
   }
 
-  const { data, error } = await supabase.auth.updateUser({
+  const { data, error } = await client.auth.updateUser({
     data: userMetadata
   });
 
@@ -62,8 +71,9 @@ export async function signIn({
   email,
   password
 }) {
+  const client = requireSupabase();
   const { data, error } =
-    await supabase.auth.signInWithPassword({
+    await client.auth.signInWithPassword({
       email,
       password
     });
@@ -76,8 +86,9 @@ export async function signIn({
 }
 
 export async function signInWithGoogle() {
+  const client = requireSupabase();
   const { data, error } =
-    await supabase.auth.signInWithOAuth({
+    await client.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: window.location.origin
@@ -92,8 +103,9 @@ export async function signInWithGoogle() {
 }
 
 export async function signOut() {
+  const client = requireSupabase();
   const { error } =
-    await supabase.auth.signOut();
+    await client.auth.signOut();
 
   if (error) {
     throw translateAuthError(error);
@@ -101,8 +113,9 @@ export async function signOut() {
 }
 
 export async function resetPassword(email) {
+  const client = requireSupabase();
   const { error } =
-    await supabase.auth.resetPasswordForEmail(
+    await client.auth.resetPasswordForEmail(
       email,
       {
         redirectTo:
@@ -116,7 +129,8 @@ export async function resetPassword(email) {
 }
 
 export function onAuthStateChange(callback) {
-  return supabase.auth.onAuthStateChange(
+  const client = requireSupabase();
+  return client.auth.onAuthStateChange(
     (event, session) => {
       callback(event, session);
     }
@@ -124,10 +138,22 @@ export function onAuthStateChange(callback) {
 }
 
 export async function getSession() {
+  const client = requireSupabase();
+
+  let timeoutId;
+  const sessionResult = client.auth.getSession();
+  const timeoutResult = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => {
+      reject(new Error('เชื่อมต่อ Supabase ไม่สำเร็จภายใน 8 วินาที กรุณาตรวจสอบ Environment Variables และการเชื่อมต่อเครือข่าย'));
+    }, 8000);
+  });
+
   const {
     data,
     error
-  } = await supabase.auth.getSession();
+  } = await Promise.race([sessionResult, timeoutResult]).finally(() => {
+    window.clearTimeout(timeoutId);
+  });
 
   if (error) {
     throw translateAuthError(error);
