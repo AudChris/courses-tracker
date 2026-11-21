@@ -59,14 +59,19 @@ WORK FLOW การใช้งาน BU Course Tracker
    - เมื่อออกจากระบบสำเร็จ ระบบจะกลับไปหน้าเข้าสู่ระบบ
 
 
-WORK FLOW สำหรับผู้ดูแล: เผยแพร่เว็บไซต์บน Firebase Hosting
-============================================================
+WORK FLOW สำหรับผู้ดูแล: เผยแพร่เว็บไซต์บน Vercel
+===================================================
 
 1. เปิด Terminal หรือ PowerShell ที่โฟลเดอร์โปรเจกต์
-2. สร้างไฟล์สำหรับเผยแพร่ด้วยคำสั่ง:
+2. ตรวจสอบ build ให้ผ่านด้วยคำสั่ง:
       npm run build
-3. เผยแพร่โฟลเดอร์ dist ไปยัง Firebase Hosting ด้วยคำสั่ง:
-      firebase deploy --only hosting --project ce481-bb7ef
-4. รอจนคำสั่งแจ้งว่า Deploy สำเร็จ
-5. เปิด URL ของ Firebase Hosting และรีโหลดหน้าแบบไม่ใช้แคช
+3. เชื่อม repository นี้กับ Vercel แล้ว Import Project
+4. ตั้งค่า Project ให้ใช้:
+      Framework Preset: Vite
+      Build Command: npm run build
+      Output Directory: dist
+5. เพิ่ม Environment Variables จาก .env.example ในหน้า Vercel
+   โดยตั้งชื่อและค่าให้ตรงกับ Supabase ของโครงการ
+6. กด Deploy หรือ push โค้ดไปยัง branch ที่เชื่อมไว้เพื่อ deploy อัตโนมัติ
+7. เปิด Production URL ของ Vercel และรีโหลดหน้าแบบไม่ใช้แคช
    (Ctrl+F5) เพื่อตรวจเวอร์ชันล่าสุด
