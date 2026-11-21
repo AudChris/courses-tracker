@@ -1,5 +1,5 @@
 ข้อเสนอแนะการพัฒนาเว็บ Course Tracker
-เว็บ: https://ce481-bb7ef.web.app/dashboard
+เว็บ Production: Vercel (หน้า Dashboard: /dashboard; ใช้ Host เดียวกันทุกหน้า)
 
 มุมมอง: จำลองเป็น USER ที่ล็อกอินเข้ามาใช้งานจริงทุกวัน
 

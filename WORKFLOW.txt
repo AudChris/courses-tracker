@@ -70,8 +70,10 @@ WORK FLOW สำหรับผู้ดูแล: เผยแพร่เว�
       Framework Preset: Vite
       Build Command: npm run build
       Output Directory: dist
+   vercel.json ตั้งค่า rewrite ให้ทุกเส้นทางของแอปเปิดผ่าน Vercel ได้
 5. เพิ่ม Environment Variables จาก .env.example ในหน้า Vercel
    โดยตั้งชื่อและค่าให้ตรงกับ Supabase ของโครงการ
 6. กด Deploy หรือ push โค้ดไปยัง branch ที่เชื่อมไว้เพื่อ deploy อัตโนมัติ
 7. เปิด Production URL ของ Vercel และรีโหลดหน้าแบบไม่ใช้แคช
-   (Ctrl+F5) เพื่อตรวจเวอร์ชันล่าสุด
+   (Ctrl+F5) เพื่อตรวจเวอร์ชันล่าสุด รวมถึงลองเปิดหรือรีเฟรช /login,
+   /register, /dashboard และ /courses/new โดยตรง
